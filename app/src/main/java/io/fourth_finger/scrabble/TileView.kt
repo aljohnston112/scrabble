@@ -13,7 +13,7 @@ class TileView(context: Context) : View(context) {
         set(value) {
             field = value
             if (value) {
-                setOnTouchListener(GameBoardViewGroup.Companion.DragOnDownTouchListener(this))
+                setOnTouchListener(GameBoardViewGroup.Companion.DragOnDownTouchListener())
             } else {
                 setOnTouchListener(null)
             }

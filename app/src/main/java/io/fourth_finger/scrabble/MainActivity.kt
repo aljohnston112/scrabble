@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
             }
             gameBoardView.addView(view)
         }
-        binding.root.addView(gameBoardView)
+        binding.gameAreaConstraintLayout.addView(gameBoardView)
 
         val tileRackView = TileRackViewGroup(this).apply {
             id = View.generateViewId()
@@ -53,10 +53,10 @@ class MainActivity : ComponentActivity() {
             view.isMovable = true
             tileRackView.addView(view)
         }
-        binding.root.addView(tileRackView)
+        binding.gameAreaConstraintLayout.addView(tileRackView)
 
         val constraintSet = ConstraintSet()
-        constraintSet.clone(binding.root)
+        constraintSet.clone(binding.gameAreaConstraintLayout)
 
         // Constraints for gameBoardView
         constraintSet.connect(gameBoardView.id, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP)
@@ -69,10 +69,11 @@ class MainActivity : ComponentActivity() {
         constraintSet.connect(tileRackView.id, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
         constraintSet.connect(tileRackView.id, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
 
-        constraintSet.applyTo(binding.root)
+        constraintSet.applyTo(binding.gameAreaConstraintLayout)
 
         binding.root.requestLayout()
 
+        // Go fullscreen
         val windowInsetsController =
             WindowCompat.getInsetsController(window, window.decorView)
         windowInsetsController.systemBarsBehavior =
