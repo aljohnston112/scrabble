@@ -1,11 +1,9 @@
 package io.fourth_finger.scrabble
 
 import android.content.Context
-import android.util.AttributeSet
 import android.view.DragEvent
 import android.view.ViewGroup
 import androidx.core.view.isVisible
-import kotlin.math.floor
 import kotlin.properties.Delegates
 
 class TileRackViewGroup(
@@ -47,6 +45,15 @@ class TileRackViewGroup(
                     )
 
             }
+        }
+    }
+
+    fun addNewTileRack(rack: TileRack) {
+        removeAllViews()
+        for (tile in rack.tiles){
+            val view = TileView(context, tile)
+            view.isMovable = true
+            addView(view)
         }
     }
 

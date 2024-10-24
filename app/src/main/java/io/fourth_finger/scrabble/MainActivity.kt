@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 
 import androidx.activity.ComponentActivity
+import androidx.activity.viewModels
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.WindowCompat
@@ -16,6 +17,8 @@ import io.fourth_finger.scrabble.databinding.ActivityMainBinding
 class MainActivity : ComponentActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    val viewModel: ActivityMainViewModel by viewModels()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,31 +28,42 @@ class MainActivity : ComponentActivity() {
         setContentView(view)
 
         // Set up the board
-        val n = 15
-        val minSize = 192
-        val gameBoardView = GameBoardViewGroup(this, n, minSize).apply {
+        val minTileSize = 192
+        val n = Board.BOARD_WIDTH_AND_HEIGHT
+        val gameBoardView = GameBoardViewGroup(this, n, minTileSize).apply {
             id = View.generateViewId()
             layoutParams = ConstraintLayout.LayoutParams(0, 0)
         }
-        gameBoardView.minimumHeight = (minSize * n)
-        gameBoardView.minimumWidth = (minSize * n)
-        (0 until n * n).forEach { i ->
-            val view = BoardTileView(this).apply {
-                layoutParams = ViewGroup.LayoutParams(minSize, minSize)
-            }
-            gameBoardView.addView(view)
-        }
+        gameBoardView.minimumHeight = (minTileSize * n)
+        gameBoardView.minimumWidth = (minTileSize * n)
         binding.gameAreaConstraintLayout.addView(gameBoardView)
 
-
-        val gameState = GameState.afterFillingRacks(GameState())
-        val tileRackView = TileRackViewGroup(this, gameState.tileRack).apply {
-            id = View.generateViewId()
-            layoutParams = ConstraintLayout.LayoutParams(0, minSize)
+        viewModel.board.observe(this){ board ->
+            gameBoardView.removeAllViews()
+            for(row in 0 until board.board.size) {
+                for (col in 0 until board.board[row].size) {
+                    val tile = board.board[row][col]
+                    val view = TileView(this, tile).apply {
+                        layoutParams = ViewGroup.LayoutParams(minTileSize, minTileSize)
+                    }
+                    gameBoardView.addView(view)
+                }
+            }
         }
-        tileRackView.minimumHeight = (minSize)
+
+        // Set up the tile rack
+        val tileRackView = TileRackViewGroup(this, TileRack(emptyList())).apply {
+            id = View.generateViewId()
+            layoutParams = ConstraintLayout.LayoutParams(0, minTileSize)
+        }
+        tileRackView.minimumHeight = (minTileSize)
         binding.gameAreaConstraintLayout.addView(tileRackView)
 
+        viewModel.tileRack.observe(this) { tileRack ->
+            tileRackView.addNewTileRack(tileRack)
+        }
+
+        // Set up constraints
         val constraintSet = ConstraintSet()
         constraintSet.clone(binding.gameAreaConstraintLayout)
 

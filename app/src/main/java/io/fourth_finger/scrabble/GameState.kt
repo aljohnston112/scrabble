@@ -12,6 +12,10 @@ class GameState(
 
     companion object{
 
+        fun getStartingGame(): GameState {
+            return afterFillingRacks(GameState())
+        }
+
         fun afterFillingRacks(gameState: GameState): GameState {
             val numToAdd = MAX_TILES - gameState.tileRack.tiles.size
             val numToAddToOpponent = MAX_TILES - gameState.opponentTileRack.tiles.size

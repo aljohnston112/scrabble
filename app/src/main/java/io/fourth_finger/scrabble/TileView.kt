@@ -11,7 +11,7 @@ import kotlin.math.max
 
 class TileView(
     context: Context,
-    val tile: Tile
+    val tile: Tile?
 ) : View(context) {
 
     var isMovable = false
@@ -42,53 +42,44 @@ class TileView(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        val paddingRatio = 0.25f
-        val characterPadding = (width * paddingRatio).toInt()
-        val pointsPadding = 8
-
-        val paddedWidth = width - characterPadding * 2
-        val paddedHeight = height - characterPadding * 2
-
-        // Set the background color
+        // Draw border
         setBackgroundColor(Color.parseColor("#c69874"))
-
-        // Adjust the border stroke width based on whether the tile is movable
         borderPaint.strokeWidth = if (isMovable) 8f else 4f
-
-        // Draw the border
         val left = 0f
         val top = 0f
         val right = width.toFloat()
         val bottom = height.toFloat()
         canvas.drawRect(left, top, right, bottom, borderPaint)
 
-        // Set text size for the main character
-        textPaint.textSize = fontSizeUtility.getLargestFontThatFitsSquare(
-            tile.char.toString(),
-            paddedWidth
-        ).toFloat()
+        if(tile != null) {
+            val paddingRatio = 0.25f
+            val characterPadding = (width * paddingRatio).toInt()
+            val pointsPadding = 8
+            val paddedWidth = width - characterPadding * 2
 
-        // Get bounds for the main character text
-        val bounds = Rect()
-        val text = tile.char.toString()
-        textPaint.getTextBounds(text, 0, text.length, bounds)
+            // Draw the letter
+            textPaint.textSize = fontSizeUtility.getLargestFontThatFitsSquare(
+                tile.char.toString(),
+                paddedWidth
+            ).toFloat()
+            val bounds = Rect()
+            val text = tile.char.toString()
+            textPaint.getTextBounds(text, 0, text.length, bounds)
+            val xOffset = (width / 2f)
+            val yOffset =
+                ((height / 2f) - (bounds.exactCenterY()))
 
-        // Calculate offsets for centering the main character with padding
-        val xOffset = (width / 2f) // Center horizontally
-        val yOffset = ((height / 2f) - (bounds.exactCenterY())) // Center vertically, adjust for baseline
+            canvas.drawText(text, xOffset, yOffset, textPaint)
 
-        // Draw the main character
-        canvas.drawText(text, xOffset, yOffset, textPaint)
+            // Draw the points
+            textPaint.textSize = (paddedWidth * 0.25f).toFloat()
+            val pointsText = tile.points.toString()
+            val pointsXOffset = (width - pointsPadding - textPaint.measureText(pointsText))
+            val pointsYOffset = (height - pointsPadding).toFloat()
 
-        // Set text size for the points (smaller font)
-        textPaint.textSize = (paddedWidth * 0.25f).toFloat()
+            canvas.drawText(pointsText, pointsXOffset, pointsYOffset, textPaint)
+        }
 
-        // Draw the points in the bottom-right corner with 8-pixel padding
-        val pointsText = tile.points.toString()
-        val pointsXOffset = (width - pointsPadding - textPaint.measureText(pointsText))
-        val pointsYOffset = (height - pointsPadding).toFloat()
-
-        canvas.drawText(pointsText, pointsXOffset, pointsYOffset, textPaint)
     }
 
 
