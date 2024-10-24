@@ -25,7 +25,7 @@ class MainActivity : ComponentActivity() {
         setContentView(view)
 
         // Set up the board
-        val n = 20
+        val n = 15
         val minSize = 192
         val gameBoardView = GameBoardViewGroup(this, n, minSize).apply {
             id = View.generateViewId()
@@ -34,25 +34,20 @@ class MainActivity : ComponentActivity() {
         gameBoardView.minimumHeight = (minSize * n)
         gameBoardView.minimumWidth = (minSize * n)
         (0 until n * n).forEach { i ->
-            val view = TileView(this).apply {
+            val view = BoardTileView(this).apply {
                 layoutParams = ViewGroup.LayoutParams(minSize, minSize)
             }
             gameBoardView.addView(view)
         }
         binding.gameAreaConstraintLayout.addView(gameBoardView)
 
-        val tileRackView = TileRackViewGroup(this).apply {
+
+        val gameState = GameState.afterFillingRacks(GameState())
+        val tileRackView = TileRackViewGroup(this, gameState.tileRack).apply {
             id = View.generateViewId()
             layoutParams = ConstraintLayout.LayoutParams(0, minSize)
         }
         tileRackView.minimumHeight = (minSize)
-        (0 until 7).forEach { i ->
-            val view = TileView(this).apply {
-                layoutParams = ViewGroup.LayoutParams(minSize, minSize)
-            }
-            view.isMovable = true
-            tileRackView.addView(view)
-        }
         binding.gameAreaConstraintLayout.addView(tileRackView)
 
         val constraintSet = ConstraintSet()

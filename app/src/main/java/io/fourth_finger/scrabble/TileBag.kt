@@ -1,28 +1,6 @@
 package io.fourth_finger.scrabble
 
-import io.fourth_finger.scrabble.TileRack.Companion.MAX_TILES
-import kotlin.random.Random
-
 class TileBag(val tiles: List<Tile>) {
-
-    fun afterFillingRack(tileRack: TileRack): TileBag {
-        val numToAdd = MAX_TILES - tileRack.tiles.size
-        if (numToAdd <= 0) return this
-
-        val availableTiles = tiles.toMutableList()
-        val tilesToAdd = mutableListOf<Tile>()
-        repeat(numToAdd) {
-            if (availableTiles.isNotEmpty()) {
-                tilesToAdd.add(
-                    availableTiles.removeAt(
-                        Random.nextInt(availableTiles.size)
-                    )
-                )
-            }
-        }
-
-        return TileBag(availableTiles)
-    }
 
     companion object {
 

@@ -9,11 +9,20 @@ import kotlin.math.floor
 import kotlin.properties.Delegates
 
 class TileRackViewGroup(
-    context: Context
+    context: Context,
+    tileRack: TileRack
 ): ViewGroup(context) {
 
     private val numberOfTiles = 7
     private var squareSize by Delegates.notNull<Int>()
+
+    init {
+        for (tile in tileRack.tiles){
+            val view = TileView(context, tile)
+            view.isMovable = true
+            addView(view)
+        }
+    }
 
     override fun onLayout(
         changed: Boolean,

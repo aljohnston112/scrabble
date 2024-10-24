@@ -13,12 +13,12 @@ class TileRack(val tiles: List<Tile>){
     }
 
     fun withTiles(newTiles: List<Tile>): TileRack {
-        require(newTiles.size + tiles.size < MAX_TILES) { "Tile rack can only hold 7 letters; had ${tiles.size} and ${newTiles.size} was given" }
+        require(newTiles.size + tiles.size <= MAX_TILES) { "Tile rack can only hold 7 letters; had ${tiles.size} and ${newTiles.size} was given" }
         return TileRack(tiles.toMutableList().apply { addAll(newTiles) })
     }
 
     fun withTile(newTile: Tile): TileRack {
-        require(1 + tiles.size < MAX_TILES) { "Tile rack can only hold 7 letters; had ${tiles.size} and 1 was given" }
+        require(1 + tiles.size <= MAX_TILES) { "Tile rack can only hold 7 letters; had ${tiles.size} and 1 was given" }
         return TileRack(tiles.toMutableList().apply { add(newTile) })
     }
 
