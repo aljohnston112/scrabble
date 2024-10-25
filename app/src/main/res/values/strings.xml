@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Scrabble</string>
+    <string name="submit_word">Submit Word</string>
 </resources>

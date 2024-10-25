@@ -11,10 +11,11 @@ import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.marginBottom
 import io.fourth_finger.scrabble.databinding.ActivityMainBinding
 
 
-class MainActivity : ComponentActivity() {
+class ActivityMain : ComponentActivity() {
 
     private lateinit var binding: ActivityMainBinding
     val viewModel: ActivityMainViewModel by viewModels()
@@ -76,11 +77,19 @@ class MainActivity : ComponentActivity() {
         // Constraints for tileRackView
         constraintSet.connect(tileRackView.id, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START)
         constraintSet.connect(tileRackView.id, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
-        constraintSet.connect(tileRackView.id, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
+        constraintSet.connect(tileRackView.id, ConstraintSet.BOTTOM, binding.submitButton.id, ConstraintSet.TOP)
 
         constraintSet.applyTo(binding.gameAreaConstraintLayout)
 
         binding.root.requestLayout()
+
+
+        binding.gameAreaConstraintLayout.setOnApplyWindowInsetsListener { view, insets ->
+            val bottomInset = insets.systemWindowInsetBottom
+            view.setPadding(0, 0, 0, bottomInset)
+            insets
+        }
+
 
         // Go fullscreen
         val windowInsetsController =
