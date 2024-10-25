@@ -70,13 +70,14 @@ class GameBoardViewGroup(
 
     }
 
-    init {
-        setOnDragListener { _, event ->
+    private val dragListener = object : OnDragListener {
+
+        override fun onDrag(v: View?, event: DragEvent): Boolean {
             val view = event.localState
             if (view is TileView) {
                 when (event.action) {
                     DragEvent.ACTION_DRAG_STARTED -> {
-                        return@setOnDragListener true
+                        return true
                     }
 
                     DragEvent.ACTION_DROP -> {
@@ -98,18 +99,23 @@ class GameBoardViewGroup(
                         (view.layoutParams as MarginLayoutParams).topMargin = targetY.toInt()
                         requestLayout()
                         view.visibility = VISIBLE
-                        return@setOnDragListener true
+                        return true
                     }
 
                     DragEvent.ACTION_DRAG_ENDED -> {
-                        return@setOnDragListener true
+                        return true
                     }
 
-                    else -> return@setOnDragListener false
+                    else -> return false
                 }
             }
-            false
+            return false
         }
+    }
+
+
+    init {
+        setOnDragListener(dragListener)
     }
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
@@ -224,27 +230,6 @@ class GameBoardViewGroup(
             }
         }
         return super.onTouchEvent(event)
-    }
-
-    companion object {
-
-        class DragOnDownTouchListener() : OnTouchListener {
-            override fun onTouch(view: View, event: MotionEvent): Boolean {
-                if (view is TileView) {
-                    when (event.action) {
-                        MotionEvent.ACTION_DOWN -> {
-                            val dragShadowBuilder = DragShadowBuilder(view)
-                            view.startDragAndDrop(null, dragShadowBuilder, view, 0)
-                            view.visibility = INVISIBLE
-                            return true
-                        }
-                        else -> return false
-                    }
-                }
-                return false
-            }
-        }
-
     }
 
 }

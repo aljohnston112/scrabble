@@ -5,22 +5,82 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
+import android.view.DragEvent
+import android.view.MotionEvent
 import android.view.View
-import java.lang.Integer.min
-import kotlin.math.max
+import android.view.ViewGroup
+import android.view.ViewGroup.MarginLayoutParams
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.floor
+import kotlin.text.get
+import kotlin.text.set
 
 class TileView(
     context: Context,
     val tile: Tile?
 ) : View(context) {
 
+    private val isDraggingTile = AtomicBoolean(false)
+
+    private val touchListener = object : OnTouchListener {
+
+        override fun onTouch(view: View, event: MotionEvent): Boolean {
+            if (view is TileView) {
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        if (!isDraggingTile.get()) {
+                            val dragShadowBuilder = DragShadowBuilder(view)
+                            view.startDragAndDrop(null, dragShadowBuilder, view, 0)
+                            view.visibility = INVISIBLE
+                            return true
+                        } else {
+                            return false
+                        }
+                    }
+                    else -> return false
+                }
+            }
+            return false
+        }
+    }
+
+    private val dragListener = object : OnDragListener {
+
+        override fun onDrag(v: View?, event: DragEvent): Boolean {
+            val view = event.localState
+            if (view is TileView) {
+                when (event.action) {
+                    DragEvent.ACTION_DRAG_STARTED -> {
+                        if (!isDraggingTile.get()) {
+                            isDraggingTile.set(true)
+                            return true
+                        } else {
+                            return false
+                        }
+                    }
+
+
+                    DragEvent.ACTION_DRAG_ENDED -> {
+                        isDraggingTile.set(false)
+                        return true
+                    }
+
+                    else -> return false
+                }
+            }
+            return false
+        }
+    }
+
     var isMovable = false
         set(value) {
             field = value
             if (value) {
-                setOnTouchListener(GameBoardViewGroup.Companion.DragOnDownTouchListener())
+                setOnTouchListener(touchListener)
+                setOnDragListener(dragListener)
             } else {
                 setOnTouchListener(null)
+                setOnDragListener(null)
             }
         }
 
