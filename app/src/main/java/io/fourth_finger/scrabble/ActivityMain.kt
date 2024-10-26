@@ -16,7 +16,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import io.fourth_finger.scrabble.databinding.ActivityMainBinding
 import io.fourth_finger.scrabble.models.Board
-import io.fourth_finger.scrabble.models.GameState
+import io.fourth_finger.scrabble.models.Dictionary
 import io.fourth_finger.scrabble.models.TileRack
 import io.fourth_finger.scrabble.views.GameBoardViewGroup
 import io.fourth_finger.scrabble.views.TileRackViewGroup
@@ -38,15 +38,17 @@ class ActivityMain : ComponentActivity() {
         setContentView(view)
 
         this.lifecycleScope.launch(Dispatchers.IO){
-            GameState.Companion.loadDictionary(this@ActivityMain)
+            Dictionary.loadDictionary(this@ActivityMain)
         }
 
-        val gameState = GameState.Companion.getStartingGame()
+
+        val gameStateContainer = GameStateContainer()
+        val gameState = gameStateContainer.gameState.value!!
 
         // Set up the board
         val minTileSize = 192
         val n = Board.Companion.BOARD_WIDTH_AND_HEIGHT
-        val gameBoardView = GameBoardViewGroup(this, n, minTileSize).apply {
+        val gameBoardView = GameBoardViewGroup(this, gameStateContainer, minTileSize).apply {
             id = View.generateViewId()
             layoutParams = ConstraintLayout.LayoutParams(0, 0)
         }
@@ -106,15 +108,20 @@ class ActivityMain : ComponentActivity() {
         // Show words
         binding.showWords.setOnClickListener{
             val words = mutableListOf<String>()
-            if(GameState.Companion.dictionary.isEmpty()){
+            if(Dictionary.dictionary.wordTree.isEmpty()){
                 Toast.makeText(
                     this,
                     "Dictionary not yet loaded",
                     Toast.LENGTH_SHORT
                 ).show()
             } else {
-                for (tree in GameState.Companion.dictionary) {
-                    words.addAll(tree.findWords(gameState.getPlayerChars()))
+                for (tree in Dictionary.dictionary.wordTree) {
+                    words.addAll(
+                        tree.findWords(
+                            gameState.getPlayerChars(),
+                            Dictionary.dictionary.definitions
+                            )
+                    )
                 }
                 if (words.isNotEmpty()) {
                     val builder = AlertDialog.Builder(this)

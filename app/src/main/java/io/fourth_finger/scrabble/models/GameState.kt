@@ -16,22 +16,15 @@ class GameState(
         return tileRack.tiles.map { it.char }
     }
 
-    companion object{
-
-        var dictionary = emptyList<WordTree>()
-            private set
-
-        fun loadDictionary(context: Context){
-            dictionary = DictionaryUtility.Companion.getDictionary(context)
-        }
+    companion object {
 
         fun getStartingGame(): GameState {
             return afterFillingRacks(GameState())
         }
 
         fun afterFillingRacks(gameState: GameState): GameState {
-            val numToAdd = TileRack.Companion.MAX_TILES - gameState.tileRack.tiles.size
-            val numToAddToOpponent = TileRack.Companion.MAX_TILES - gameState.opponentTileRack.tiles.size
+            val numToAdd = TileRack.MAX_TILES - gameState.tileRack.tiles.size
+            val numToAddToOpponent = TileRack.MAX_TILES - gameState.opponentTileRack.tiles.size
             if (numToAdd <= 0 && numToAddToOpponent <= 0) return gameState
             val availableTilesInBag = gameState.tileBag.tiles.toMutableList()
 
@@ -52,13 +45,11 @@ class GameState(
             if (numToAddToOpponent > 0) {
                 repeat(numToAddToOpponent) {
                     if (availableTilesInBag.isNotEmpty()) {
-                        {
-                            tilesToAddToOpponentRack.add(
-                                availableTilesInBag.removeAt(
-                                    Random.nextInt(availableTilesInBag.size)
-                                )
+                        tilesToAddToOpponentRack.add(
+                            availableTilesInBag.removeAt(
+                                Random.nextInt(availableTilesInBag.size)
                             )
-                        }
+                        )
                     }
                 }
             }

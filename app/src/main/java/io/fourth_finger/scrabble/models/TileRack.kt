@@ -6,9 +6,9 @@ class TileRack(val tiles: List<Tile>){
         require(tiles.size <= MAX_TILES) { "Tile rack must have $MAX_TILES or fewer tiles, but has ${tiles.size}" }
     }
 
-    fun withoutTile(char: Char): TileRack {
-        val index = tiles.indexOfFirst { it.char == char }
-        require(index != -1) { "Tile rack does not have the tile with letter $char" }
+    fun withoutTile(tile: Tile): TileRack {
+        val index = tiles.indexOfFirst { it.char == tile.char }
+        require(index != -1) { "Tile rack does not have the tile with letter ${tile.char}" }
         return TileRack(tiles.toMutableList().apply { removeAt(index) })
     }
 

@@ -7,6 +7,9 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import io.fourth_finger.scrabble.GameStateContainer
+import io.fourth_finger.scrabble.models.Board
+import io.fourth_finger.scrabble.models.GameState
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.floor
 import kotlin.math.max
@@ -15,9 +18,11 @@ import kotlin.math.min
 
 class GameBoardViewGroup(
     context: Context,
-    val gridSize: Int = 20,
+    private var gameStateContainer: GameStateContainer,
     val squareSize: Int = 192
 ) : ViewGroup(context) {
+
+    private val gridSize = Board.BOARD_WIDTH_AND_HEIGHT
 
     private var scaleFactor = 1.0f
 
@@ -37,11 +42,17 @@ class GameBoardViewGroup(
 
     private inner class ScaleListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
 
+
         override fun onScale(detector: ScaleGestureDetector): Boolean {
+            val lastScaleFactor = scaleFactor
+            currentTranslationX /= lastScaleFactor
+            currentTranslationY /= lastScaleFactor
             scaleFactor *= detector.scaleFactor
+            scaleFactor = min(scaleFactor, 1.5f)
 
             // Limit scale to the smaller of the width or height
-            val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            val windowManager =
+                context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
             val windowHeight = windowManager.defaultDisplay.height
             val windowWidth = windowManager.defaultDisplay.width
             scaleFactor = if (windowHeight < windowWidth) {
@@ -55,13 +66,27 @@ class GameBoardViewGroup(
                     windowWidth / (squareSize * gridSize).toFloat()
                 )
             }
-            scaleFactor = min(scaleFactor, 1.5f)
 
             // Update the translation
             currentTranslationX *= scaleFactor
             currentTranslationY *= scaleFactor
 
+            currentTranslationX = when {
+                windowWidth <= width -> 0f
+                currentTranslationX > 0 -> 0f
+                currentTranslationX < (width - windowWidth) -> (width - windowWidth).toFloat()
+                else -> currentTranslationX
+            }
+
+            currentTranslationY = when {
+                windowHeight <= height -> 0f
+                currentTranslationY > 0 -> 0f
+                currentTranslationY < (height - windowHeight) -> (height - windowHeight).toFloat()
+                else -> currentTranslationY
+            }
+
             updateChildren()
+
             return true
         }
 
@@ -74,6 +99,8 @@ class GameBoardViewGroup(
         private val dropped = AtomicBoolean(false)
         private var targetX = 0
         private var targetY = 0
+        private var targetCellX = 0f
+        private var targetCellY = 0f
 
         override fun onDrag(v: View?, event: DragEvent): Boolean {
             val view = event.localState
@@ -90,8 +117,8 @@ class GameBoardViewGroup(
                         // Calculate row and column based on drawing size
                         val adjustedDropX = (event.x - currentTranslationX) / scaleFactor
                         val adjustedDropY = (event.y - currentTranslationY) / scaleFactor
-                        val targetCellX = floor(adjustedDropX / squareSize)
-                        val targetCellY = floor(adjustedDropY / squareSize)
+                        targetCellX = floor(adjustedDropX / squareSize)
+                        targetCellY = floor(adjustedDropY / squareSize)
 
                         // Margins are based on layout size
                         targetX = (targetCellX * squareSize).toInt()
@@ -103,18 +130,44 @@ class GameBoardViewGroup(
                         view.layoutParams = MarginLayoutParams(gridSize, gridSize)
                         (view.layoutParams as MarginLayoutParams).leftMargin = targetX
                         (view.layoutParams as MarginLayoutParams).topMargin = targetY
+
+                        val gameState = gameStateContainer.gameState.value!!
+                        gameStateContainer.postNewGameState(
+                            GameState(
+                                gameState.board.addTile(
+                                    view.tile!!,
+                                    targetCellX.toInt(),
+                                    targetCellY.toInt()
+                                ),
+                                gameState.tileBag,
+                                gameState.tileRack.withoutTile(view.tile),
+                                gameState.opponentTileRack
+                            )
+                        )
                         requestLayout()
                         return true
                     }
 
                     DragEvent.ACTION_DRAG_ENDED -> {
-                        if(!dropped.get()) {
+                        if (!dropped.get()) {
                             dropped.set(false)
                             return false
                         }
 
                         val parent = view.parent as ViewGroup
                         if (parent is TileRackViewGroup) {
+                            val gameState = gameStateContainer.gameState.value!!
+                            gameStateContainer.postNewGameState(
+                                GameState(
+                                    gameState.board.removeTile(
+                                        targetCellX.toInt(),
+                                        targetCellY.toInt()
+                                    ),
+                                    gameState.tileBag,
+                                    gameState.tileRack.withTile(view.tile!!),
+                                    gameState.opponentTileRack
+                                )
+                            )
                             return false
                         }
 

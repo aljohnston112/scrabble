@@ -36,7 +36,12 @@ class WordTree(val value: LetterNode) {
      * This node does not count as the first letter.
      * The children nodes are the first characters of the words.
      */
-    fun findWords(chars: List<Char>): MutableList<String> {
+    fun findWords(
+        chars: List<Char>,
+        dictionary: Map<String, String>? = null
+    ): MutableList<String> {
+
+        val hasDictionary = dictionary != null
         val foundWords = mutableListOf<String>()
         val charFrequencies = LetterFrequencyList(getCharFrequency(chars))
 
@@ -68,6 +73,9 @@ class WordTree(val value: LetterNode) {
                     decremented = true
                     if (child.children.isEmpty()) {
                         foundWords.add(word)
+                        if(hasDictionary){
+                            foundWords.add(dictionary[word]!!)
+                        }
                     }
                 }
 
