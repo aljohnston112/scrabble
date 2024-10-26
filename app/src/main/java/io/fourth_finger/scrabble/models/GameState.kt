@@ -1,7 +1,8 @@
-package io.fourth_finger.scrabble
+package io.fourth_finger.scrabble.models
 
 import android.content.Context
-import io.fourth_finger.scrabble.TileRack.Companion.MAX_TILES
+import io.fourth_finger.scrabble.dictionary.DictionaryUtility
+import io.fourth_finger.scrabble.dictionary.WordTree
 import kotlin.random.Random
 
 class GameState(
@@ -21,7 +22,7 @@ class GameState(
             private set
 
         fun loadDictionary(context: Context){
-            dictionary = DictionaryUtility.getDictionary(context)
+            dictionary = DictionaryUtility.Companion.getDictionary(context)
         }
 
         fun getStartingGame(): GameState {
@@ -29,8 +30,8 @@ class GameState(
         }
 
         fun afterFillingRacks(gameState: GameState): GameState {
-            val numToAdd = MAX_TILES - gameState.tileRack.tiles.size
-            val numToAddToOpponent = MAX_TILES - gameState.opponentTileRack.tiles.size
+            val numToAdd = TileRack.Companion.MAX_TILES - gameState.tileRack.tiles.size
+            val numToAddToOpponent = TileRack.Companion.MAX_TILES - gameState.opponentTileRack.tiles.size
             if (numToAdd <= 0 && numToAddToOpponent <= 0) return gameState
             val availableTilesInBag = gameState.tileBag.tiles.toMutableList()
 

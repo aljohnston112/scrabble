@@ -1,4 +1,4 @@
-package io.fourth_finger.scrabble
+package io.fourth_finger.scrabble.views
 
 import android.content.Context
 import android.util.Log
@@ -7,6 +7,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
+import io.fourth_finger.scrabble.models.TileRack
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.floor
 import kotlin.properties.Delegates

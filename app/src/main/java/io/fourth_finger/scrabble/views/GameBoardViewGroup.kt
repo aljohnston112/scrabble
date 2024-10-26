@@ -1,4 +1,4 @@
-package io.fourth_finger.scrabble
+package io.fourth_finger.scrabble.views
 
 import android.content.Context
 import android.view.DragEvent
@@ -7,6 +7,7 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -66,18 +67,26 @@ class GameBoardViewGroup(
 
     }
 
+    private val isDraggingTile = AtomicBoolean(false)
+
     private val dragListener = object : OnDragListener {
+
+        private val dropped = AtomicBoolean(false)
+        private var targetX = 0
+        private var targetY = 0
 
         override fun onDrag(v: View?, event: DragEvent): Boolean {
             val view = event.localState
             if (view is TileView) {
                 when (event.action) {
                     DragEvent.ACTION_DRAG_STARTED -> {
+                        isDraggingTile.set(true)
                         return true
                     }
 
                     DragEvent.ACTION_DROP -> {
-
+                        isDraggingTile.set(true)
+                        dropped.set(true)
                         // Calculate row and column based on drawing size
                         val adjustedDropX = (event.x - currentTranslationX) / scaleFactor
                         val adjustedDropY = (event.y - currentTranslationY) / scaleFactor
@@ -85,20 +94,38 @@ class GameBoardViewGroup(
                         val targetCellY = floor(adjustedDropY / squareSize)
 
                         // Margins are based on layout size
-                        val targetX = targetCellX * squareSize
-                        val targetY = targetCellY * squareSize
+                        targetX = (targetCellX * squareSize).toInt()
+                        targetY = (targetCellY * squareSize).toInt()
                         val parent = view.parent as ViewGroup
                         parent.removeView(view)
                         addView(view)
-                        view.layoutParams = MarginLayoutParams(gridSize, gridSize)
-                        (view.layoutParams as MarginLayoutParams).leftMargin = targetX.toInt()
-                        (view.layoutParams as MarginLayoutParams).topMargin = targetY.toInt()
-                        requestLayout()
                         view.visibility = VISIBLE
+                        view.layoutParams = MarginLayoutParams(gridSize, gridSize)
+                        (view.layoutParams as MarginLayoutParams).leftMargin = targetX
+                        (view.layoutParams as MarginLayoutParams).topMargin = targetY
+                        requestLayout()
                         return true
                     }
 
                     DragEvent.ACTION_DRAG_ENDED -> {
+                        if(!dropped.get()) {
+                            dropped.set(false)
+                            return false
+                        }
+
+                        val parent = view.parent as ViewGroup
+                        if (parent is TileRackViewGroup) {
+                            return false
+                        }
+
+                        parent.removeView(view)
+                        addView(view)
+                        view.visibility = VISIBLE
+                        view.layoutParams = MarginLayoutParams(gridSize, gridSize)
+                        (view.layoutParams as MarginLayoutParams).leftMargin = targetX.toInt()
+                        (view.layoutParams as MarginLayoutParams).topMargin = targetY.toInt()
+                        requestLayout()
+
                         return true
                     }
 

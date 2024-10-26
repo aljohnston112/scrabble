@@ -1,4 +1,4 @@
-package io.fourth_finger.scrabble
+package io.fourth_finger.scrabble.dictionary
 
 class LetterFrequencyList(frequencies: MutableMap<Char, Int>) {
 

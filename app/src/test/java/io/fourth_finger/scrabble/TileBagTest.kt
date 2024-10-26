@@ -1,6 +1,7 @@
 package io.fourth_finger.scrabble
 
-import io.fourth_finger.scrabble.TileBag.Companion.getStartingBag
+import io.fourth_finger.scrabble.models.Tile
+import io.fourth_finger.scrabble.models.TileBag.Companion.getStartingBag
 import org.junit.Test
 
 import org.junit.Assert.*

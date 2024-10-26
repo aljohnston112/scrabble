@@ -1,4 +1,4 @@
-package io.fourth_finger.scrabble
+package io.fourth_finger.scrabble.dictionary
 
 import kotlin.collections.ArrayDeque
 import kotlin.text.forEach

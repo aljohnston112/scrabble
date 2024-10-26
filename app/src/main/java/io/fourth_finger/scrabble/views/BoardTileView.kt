@@ -1,4 +1,4 @@
-package io.fourth_finger.scrabble
+package io.fourth_finger.scrabble.views
 
 import android.content.Context
 import android.graphics.Canvas

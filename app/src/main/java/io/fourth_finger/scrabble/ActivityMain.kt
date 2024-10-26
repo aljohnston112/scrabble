@@ -15,6 +15,12 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import io.fourth_finger.scrabble.databinding.ActivityMainBinding
+import io.fourth_finger.scrabble.models.Board
+import io.fourth_finger.scrabble.models.GameState
+import io.fourth_finger.scrabble.models.TileRack
+import io.fourth_finger.scrabble.views.GameBoardViewGroup
+import io.fourth_finger.scrabble.views.TileRackViewGroup
+import io.fourth_finger.scrabble.views.TileView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -32,14 +38,14 @@ class ActivityMain : ComponentActivity() {
         setContentView(view)
 
         this.lifecycleScope.launch(Dispatchers.IO){
-            GameState.loadDictionary(this@ActivityMain)
+            GameState.Companion.loadDictionary(this@ActivityMain)
         }
 
-        val gameState = GameState.getStartingGame()
+        val gameState = GameState.Companion.getStartingGame()
 
         // Set up the board
         val minTileSize = 192
-        val n = Board.BOARD_WIDTH_AND_HEIGHT
+        val n = Board.Companion.BOARD_WIDTH_AND_HEIGHT
         val gameBoardView = GameBoardViewGroup(this, n, minTileSize).apply {
             id = View.generateViewId()
             layoutParams = ConstraintLayout.LayoutParams(0, 0)
@@ -100,14 +106,14 @@ class ActivityMain : ComponentActivity() {
         // Show words
         binding.showWords.setOnClickListener{
             val words = mutableListOf<String>()
-            if(GameState.dictionary.isEmpty()){
+            if(GameState.Companion.dictionary.isEmpty()){
                 Toast.makeText(
                     this,
                     "Dictionary not yet loaded",
                     Toast.LENGTH_SHORT
                 ).show()
             } else {
-                for (tree in GameState.dictionary) {
+                for (tree in GameState.Companion.dictionary) {
                     words.addAll(tree.findWords(gameState.getPlayerChars()))
                 }
                 if (words.isNotEmpty()) {

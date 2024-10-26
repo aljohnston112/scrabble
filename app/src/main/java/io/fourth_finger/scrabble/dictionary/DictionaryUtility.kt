@@ -1,6 +1,7 @@
-package io.fourth_finger.scrabble
+package io.fourth_finger.scrabble.dictionary
 
 import android.content.Context
+import io.fourth_finger.scrabble.R
 
 class DictionaryUtility {
 
