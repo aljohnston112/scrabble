@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.floor
 import kotlin.properties.Delegates
 
 
@@ -23,6 +24,9 @@ class TileRackViewGroup(
 
     private val tileDragListener = object : OnDragListener {
 
+        private val dropped = AtomicBoolean(false)
+        private var indexOfDraggingChild = -1
+
         override fun onDrag(v: View, event: DragEvent): Boolean {
             val view = event.localState
             if (view is TileView) {
@@ -31,6 +35,7 @@ class TileRackViewGroup(
                         Log.d("TileRack", "Drag started")
                         if (!isDraggingTile.get()) {
                             isDraggingTile.set(true)
+                            indexOfDraggingChild = indexOfChild(view)
                             return true
                         } else {
                             return false
@@ -46,28 +51,36 @@ class TileRackViewGroup(
                         view.translationY = 0f
                         view.scaleX = 1f
                         view.scaleY = 1f
-                        addView(view)
+                        val index = floor(event.x / squareSize).toInt()
+                        addView(view, index)
+                        dropped.set(true)
                         requestLayout()
                         return false
                     }
 
                     DragEvent.ACTION_DRAG_ENDED -> {
                         Log.d("TileRack", "Drag end")
-                        val parent = view.parent as ViewGroup
                         isDraggingTile.set(false)
-                        if(parent !is GameBoardViewGroup) {
-                            parent.removeView(view)
-                            view.isVisible = true
-                            view.translationX = 0f
-                            view.translationY = 0f
-                            view.scaleX = 1f
-                            view.scaleY = 1f
-                            addView(view)
-                            requestLayout()
-                            return true
-                        } else {
+
+                        if (dropped.get()) {
+                            dropped.set(false)
                             return false
                         }
+
+                        val parent = view.parent as ViewGroup
+                        if (parent is GameBoardViewGroup) {
+                            return false
+                        }
+
+                        parent.removeView(view)
+                        view.isVisible = true
+                        view.translationX = 0f
+                        view.translationY = 0f
+                        view.scaleX = 1f
+                        view.scaleY = 1f
+                        addView(view, indexOfDraggingChild)
+                        requestLayout()
+                        return true
                     }
 
                     else -> return false
@@ -92,6 +105,7 @@ class TileRackViewGroup(
                             return false
                         }
                     }
+
                     else -> return false
                 }
             }
