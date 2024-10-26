@@ -150,7 +150,6 @@ class GameBoardViewGroup(
 
                     DragEvent.ACTION_DRAG_ENDED -> {
                         if (!dropped.get()) {
-                            dropped.set(false)
                             return false
                         }
 
@@ -177,8 +176,8 @@ class GameBoardViewGroup(
                         view.layoutParams = MarginLayoutParams(gridSize, gridSize)
                         (view.layoutParams as MarginLayoutParams).leftMargin = targetX.toInt()
                         (view.layoutParams as MarginLayoutParams).topMargin = targetY.toInt()
+                        dropped.set(false)
                         requestLayout()
-
                         return true
                     }
 
