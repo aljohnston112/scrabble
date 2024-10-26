@@ -1,5 +1,6 @@
 package io.fourth_finger.scrabble
 
+import android.content.Context
 import io.fourth_finger.scrabble.TileRack.Companion.MAX_TILES
 import kotlin.random.Random
 
@@ -10,7 +11,18 @@ class GameState(
     val opponentTileRack: TileRack = TileRack(emptyList())
 ) {
 
+    fun getPlayerChars(): List<Char> {
+        return tileRack.tiles.map { it.char }
+    }
+
     companion object{
+
+        var dictionary = emptyList<WordTree>()
+            private set
+
+        fun loadDictionary(context: Context){
+            dictionary = DictionaryUtility.getDictionary(context)
+        }
 
         fun getStartingGame(): GameState {
             return afterFillingRacks(GameState())

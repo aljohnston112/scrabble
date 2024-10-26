@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:fitsSystemWindows="true"
-    android:background="@color/black">
+    android:background="@color/burnt_sienna">
 
     <Button
         android:id="@+id/submit_button"
@@ -15,6 +15,16 @@
         android:layout_height="wrap_content"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:text="@string/submit_word"/>
+        android:text="@string/submit_word"
+        android:layout_margin="16dp"/>
+
+    <Button
+        android:id="@+id/show_words"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:text="@string/show_words"
+        android:layout_margin="16dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

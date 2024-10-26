@@ -9,8 +9,7 @@ import android.view.ViewGroup
 import androidx.core.view.isVisible
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.properties.Delegates
-import kotlin.text.get
-import kotlin.text.set
+
 
 class TileRackViewGroup(
     context: Context,
@@ -19,6 +18,8 @@ class TileRackViewGroup(
 
     private val numberOfTiles = 7
     private var squareSize by Delegates.notNull<Int>()
+
+    private val isDraggingTile = AtomicBoolean(false)
 
     private val tileDragListener = object : OnDragListener {
 
@@ -36,11 +37,6 @@ class TileRackViewGroup(
                         }
                     }
 
-                    DragEvent.ACTION_DRAG_ENTERED -> {
-                        Log.d("TileRack", "Drag enter")
-                        return true
-                    }
-
                     DragEvent.ACTION_DROP -> {
                         Log.d("TileRack", "Drag drop")
                         val parent = view.parent as ViewGroup
@@ -52,13 +48,26 @@ class TileRackViewGroup(
                         view.scaleY = 1f
                         addView(view)
                         requestLayout()
-                        return true
+                        return false
                     }
 
                     DragEvent.ACTION_DRAG_ENDED -> {
                         Log.d("TileRack", "Drag end")
+                        val parent = view.parent as ViewGroup
                         isDraggingTile.set(false)
-                        return true
+                        if(parent !is GameBoardViewGroup) {
+                            parent.removeView(view)
+                            view.isVisible = true
+                            view.translationX = 0f
+                            view.translationY = 0f
+                            view.scaleX = 1f
+                            view.scaleY = 1f
+                            addView(view)
+                            requestLayout()
+                            return true
+                        } else {
+                            return false
+                        }
                     }
 
                     else -> return false
@@ -67,8 +76,6 @@ class TileRackViewGroup(
             return false
         }
     }
-
-    private val isDraggingTile = AtomicBoolean(false)
 
     private val touchListener = object : OnTouchListener {
 
@@ -93,9 +100,14 @@ class TileRackViewGroup(
     }
 
     init {
+        addTileRack(tileRack)
+    }
+
+    private fun addTileRack(tileRack: TileRack) {
         for (tile in tileRack.tiles) {
             val view = TileView(context, tile)
             view.setOnTouchListener(touchListener)
+            view.id = generateViewId()
             addView(view)
         }
         setOnDragListener(tileDragListener)
@@ -129,11 +141,7 @@ class TileRackViewGroup(
 
     fun addNewTileRack(rack: TileRack) {
         removeAllViews()
-        for (tile in rack.tiles) {
-            val view = TileView(context, tile)
-            view.setOnTouchListener(touchListener)
-            addView(view)
-        }
+        addTileRack(rack)
     }
 
 }

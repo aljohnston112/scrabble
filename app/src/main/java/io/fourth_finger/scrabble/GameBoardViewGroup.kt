@@ -1,16 +1,12 @@
 package io.fourth_finger.scrabble
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Matrix
 import android.view.DragEvent
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
-import androidx.core.view.children
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
