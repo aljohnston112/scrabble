@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "io.fourth_finger.scrabble"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "io.fourth_finger.scrabble"
         minSdk = 28
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -27,11 +27,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_24
+        targetCompatibility = JavaVersion.VERSION_24
     }
-    kotlinOptions {
-        jvmTarget = "11"
+    kotlin {
+        jvmToolchain(24)
     }
     viewBinding {
         enable = true
