@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 4.0.2)
 
 set(CMAKE_CXX_STANDARD 23)
 add_compile_options(-fconstexpr-steps=10485760)
@@ -14,4 +14,9 @@ add_library(
         models/Tile.cpp
         models/WordTree.cpp
         models/WordLocation.cpp
+)
+
+target_link_libraries(
+        native-lib
+        log
 )
