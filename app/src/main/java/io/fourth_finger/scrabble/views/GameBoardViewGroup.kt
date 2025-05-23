@@ -1,6 +1,7 @@
 package io.fourth_finger.scrabble.views
 
 import android.content.Context
+import android.util.Log
 import android.view.DragEvent
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -9,8 +10,9 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import io.fourth_finger.scrabble.GameStateContainer
 import io.fourth_finger.scrabble.models.Board
+import io.fourth_finger.scrabble.models.Direction
 import io.fourth_finger.scrabble.models.GameState
-import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.runBlocking
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -19,6 +21,7 @@ import kotlin.math.min
 class GameBoardViewGroup(
     context: Context,
     private var gameStateContainer: GameStateContainer,
+    val dragMonitor: DragMonitor,
     val squareSize: Int = 192
 ) : ViewGroup(context) {
 
@@ -41,7 +44,6 @@ class GameBoardViewGroup(
     )
 
     private inner class ScaleListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-
 
         override fun onScale(detector: ScaleGestureDetector): Boolean {
             val lastScaleFactor = scaleFactor
@@ -92,108 +94,149 @@ class GameBoardViewGroup(
 
     }
 
-    private val isDraggingTile = AtomicBoolean(false)
-
     private val dragListener = object : OnDragListener {
 
-        private val dropped = AtomicBoolean(false)
         private var targetX = 0
         private var targetY = 0
-        private var targetCellX = 0f
-        private var targetCellY = 0f
+        private var targetColumn = 0
+        private var targetRow = 0
 
         override fun onDrag(v: View?, event: DragEvent): Boolean {
             val view = event.localState
             if (view is TileView) {
                 when (event.action) {
                     DragEvent.ACTION_DRAG_STARTED -> {
-                        isDraggingTile.set(true)
-                        return true
+                        Log.d("GameBoard", "Drag started")
+                        return !dragMonitor.isDragInProgress()
                     }
 
                     DragEvent.ACTION_DROP -> {
-                        isDraggingTile.set(true)
-                        dropped.set(true)
-                        // Calculate row and column based on drawing size
+                        Log.d("GameBoard", "Drag dropped")
+
+                        // Initial location on board
+                        if (view.layoutParams !is MarginLayoutParams) {
+                            view.layoutParams = MarginLayoutParams(gridSize, gridSize)
+                        }
+                        val (initialCellX, initialCellY) = getBoardCoordinates(view)
+
+                        // Calculate row and column based on drawing size and location
                         val adjustedDropX = (event.x - currentTranslationX) / scaleFactor
                         val adjustedDropY = (event.y - currentTranslationY) / scaleFactor
-                        targetCellX = floor(adjustedDropX / squareSize)
-                        targetCellY = floor(adjustedDropY / squareSize)
+                        targetColumn = floor(adjustedDropX / squareSize).toInt()
+                        targetRow = floor(adjustedDropY / squareSize).toInt()
+                        val gameState = gameStateContainer.gameState
+
+                        val spaceAlreadyHasTile =
+                            gameState.gameBoard.board[targetRow][targetColumn] != null
+                        if (spaceAlreadyHasTile) {
+                            return false
+                        }
 
                         // Margins are based on layout size
-                        targetX = (targetCellX * squareSize).toInt()
-                        targetY = (targetCellY * squareSize).toInt()
+                        targetX = (targetColumn * squareSize)
+                        targetY = (targetRow * squareSize)
                         val parent = view.parent as ViewGroup
                         parent.removeView(view)
                         addView(view)
                         view.visibility = VISIBLE
-                        view.layoutParams = MarginLayoutParams(gridSize, gridSize)
                         (view.layoutParams as MarginLayoutParams).leftMargin = targetX
                         (view.layoutParams as MarginLayoutParams).topMargin = targetY
 
-                        val gameState = gameStateContainer.gameState.value!!
-                        gameStateContainer.postNewGameState(
-                            GameState(
-                                gameState.board.addTile(
-                                    view.tile!!,
-                                    targetCellX.toInt(),
-                                    targetCellY.toInt()
-                                ),
-                                gameState.tileBag,
-                                gameState.tileRack.withoutTile(view.tile),
-                                gameState.opponentTileRack
+                        val initialParent = dragMonitor.getInitialParent()
+                        if (initialParent is TileRackViewGroup) {
+                            Log.d("GameBoard", "Drag dropped from tile rack to board")
+                            gameStateContainer.updateGameState(
+                                GameState(
+                                    gameState.gameBoard.afterAddingTile(
+                                        view.tile!!,
+                                        targetRow,
+                                        targetColumn
+                                    ),
+                                    gameState.tileBag,
+                                    gameState.tileRack.withoutTile(view.tile),
+                                    gameState.opponentTileRack
+                                )
                             )
-                        )
-                        requestLayout()
+                        } else if (initialParent is GameBoardViewGroup) {
+                            Log.d("GameBoard", "Drag dropped from board to board")
+                            gameStateContainer.updateGameState(
+                                GameState(
+                                    gameState.gameBoard.removeTile(
+                                        initialCellX,
+                                        initialCellY
+                                    ).afterAddingTile(
+                                        view.tile!!,
+                                        targetRow,
+                                        targetColumn
+                                    ),
+                                    gameState.tileBag,
+                                    gameState.tileRack,
+                                    gameState.opponentTileRack
+                                )
+                            )
+                        }
+                        Log.d("GameBoard", "Drag dropped finished")
                         return true
                     }
 
                     DragEvent.ACTION_DRAG_ENDED -> {
-                        if (!dropped.get()) {
-                            return false
-                        }
-
-                        val parent = view.parent as ViewGroup
-                        if (parent is TileRackViewGroup) {
-                            val gameState = gameStateContainer.gameState.value!!
-                            gameStateContainer.postNewGameState(
+                        Log.d("GameBoard", "Drag ended")
+                        val initialParent = dragMonitor.getInitialParent()
+                        if (initialParent is GameBoardViewGroup && view.parent is TileRackViewGroup) {
+                            Log.d("GameBoard", "Drag end from board to rack")
+                            val gameState = gameStateContainer.gameState
+                            val (row, column) = getBoardCoordinates(view)
+                            gameStateContainer.updateGameState(
                                 GameState(
-                                    gameState.board.removeTile(
-                                        targetCellX.toInt(),
-                                        targetCellY.toInt()
+                                    gameState.gameBoard.removeTile(
+                                        row,
+                                        column
                                     ),
                                     gameState.tileBag,
                                     gameState.tileRack.withTile(view.tile!!),
                                     gameState.opponentTileRack
                                 )
                             )
-                            return false
+                        } else if (
+                            initialParent is GameBoardViewGroup && view.parent == null
+                        ) {
+                            Log.d("GameBoard", "Drag end from board to void")
+                            addView(view)
+                            view.visibility = VISIBLE
+                            view.layoutParams = MarginLayoutParams(gridSize, gridSize)
+                            (view.layoutParams as MarginLayoutParams).leftMargin = targetX
+                            (view.layoutParams as MarginLayoutParams).topMargin = targetY
+                        } else if (
+                            initialParent is GameBoardViewGroup && view.parent is GameBoardViewGroup
+                        ) {
+                            Log.d("GameBoard", "Drag end from board to board")
+                            view.visibility = VISIBLE
                         }
-
-                        parent.removeView(view)
-                        addView(view)
-                        view.visibility = VISIBLE
-                        view.layoutParams = MarginLayoutParams(gridSize, gridSize)
-                        (view.layoutParams as MarginLayoutParams).leftMargin = targetX.toInt()
-                        (view.layoutParams as MarginLayoutParams).topMargin = targetY.toInt()
-                        dropped.set(false)
                         requestLayout()
+                        invalidate()
+                        Log.d("GameBoard", "Drag ended finished")
                         return true
                     }
-
-                    else -> return false
                 }
             }
             return false
         }
     }
 
-
     init {
         setOnDragListener(dragListener)
     }
 
+    private fun getBoardCoordinates(view: TileView): Pair<Int, Int> {
+        val column =
+            ((view.layoutParams as MarginLayoutParams).leftMargin) / squareSize
+        val row =
+            ((view.layoutParams as MarginLayoutParams).topMargin) / squareSize
+        return Pair(row, column)
+    }
+
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        Log.e("Game board", "Laying out board")
 
         // The grid itself
         for (row in 0 until gridSize) {
@@ -205,11 +248,24 @@ class GameBoardViewGroup(
                 val childTop = (row * squareSize)
 
                 child.layout(
-                    childLeft.toInt(),
-                    childTop.toInt(),
-                    childLeft.toInt() + squareSize,
-                    childTop.toInt() + squareSize
+                    childLeft,
+                    childTop,
+                    childLeft + squareSize,
+                    childTop + squareSize
                 )
+            }
+        }
+
+        val gameBoard = gameStateContainer.gameState.gameBoard
+        for (i in gridSize * gridSize until childCount) {
+            val child = getChildAt(i)
+            val (row, column) = getBoardCoordinates(child as TileView)
+            var tile = gameBoard.board[row][column]
+            if (tile != null) {
+                runBlocking {
+                    tile.setVerticalRed(false)
+                    tile.setHorizontalRed(false)
+                }
             }
         }
 
@@ -221,8 +277,38 @@ class GameBoardViewGroup(
             val childRight = childLeft + squareSize
             val childBottom = childTop + squareSize
             child.layout(childLeft, childTop, childRight, childBottom)
+            val (row, column) = getBoardCoordinates(child as TileView)
+            val wordLocation = gameBoard.wordsOnBoard[row][column]
+            if (wordLocation != null) {
+                val valid = wordLocation.isValid
+                val isVerticalRed =
+                    !valid && (wordLocation.direction == Direction.DOWN || wordLocation.direction == Direction.BOTH)
+                var tile = gameBoard.board[row][column]
+                var currentRow = row - 1
+                while (tile != null) {
+                    currentRow++
+                    tile = gameBoard.board[currentRow][column]
+                    runBlocking {
+                        tile?.setVerticalRed(isVerticalRed)
+                    }
+                }
+
+                val isHorizontalRed =
+                    !valid && (wordLocation.direction == Direction.RIGHT || wordLocation.direction == Direction.BOTH)
+                tile = gameBoard.board[row][column]
+                var currentColumn = column - 1
+                while (tile != null) {
+                    currentColumn++
+                    tile = gameBoard.board[row][currentColumn]
+                    runBlocking {
+                        tile?.setHorizontalRed(isHorizontalRed)
+                    }
+                }
+            }
+
         }
         updateChildren()
+        Log.e("Game board", "Done laying out board")
     }
 
     private fun updateChildren() {

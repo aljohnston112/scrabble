@@ -7,7 +7,7 @@ class LetterFrequencyList(frequencies: MutableMap<Char, Int>) {
 
     init {
         for((char, int) in frequencies){
-            _letterFrequencies.put(char, LetterFrequencyNode(char, int))
+            _letterFrequencies[char] = LetterFrequencyNode(char, int)
         }
     }
 
@@ -19,7 +19,7 @@ class LetterFrequencyList(frequencies: MutableMap<Char, Int>) {
 
     class LetterFrequencyNode(
         val char: Char,
-        val initialFrequency: Int
+        private val initialFrequency: Int
     ){
         var frequency = initialFrequency
             private set

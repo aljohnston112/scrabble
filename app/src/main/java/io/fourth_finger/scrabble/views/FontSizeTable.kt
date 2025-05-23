@@ -9,6 +9,10 @@ class FontSizeUtility() {
     companion object {
 
         fun getLargestFontThatFitsSquare(letter: String, squareSize: Int): Float {
+            if(letter == " "){
+                return 0f
+            }
+
             var fontWidth: Int = -1
             val paint = Paint()
             paint.textSize = 1f

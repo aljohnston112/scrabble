@@ -1,12 +1,9 @@
 package io.fourth_finger.scrabble.models
 
-import android.content.Context
-import io.fourth_finger.scrabble.dictionary.DictionaryUtility
-import io.fourth_finger.scrabble.dictionary.WordTree
 import kotlin.random.Random
 
 class GameState(
-    val board: Board = Board(),
+    val gameBoard: Board = Board(),
     val tileBag: TileBag = TileBag.getStartingBag(),
     val tileRack: TileRack = TileRack(emptyList()),
     val opponentTileRack: TileRack = TileRack(emptyList())
@@ -55,7 +52,7 @@ class GameState(
             }
 
             return GameState(
-                gameState.board,
+                gameState.gameBoard,
                 TileBag(availableTilesInBag),
                 gameState.tileRack.withTiles(tilesToAddToRack),
                 gameState.opponentTileRack.withTiles(tilesToAddToOpponentRack)

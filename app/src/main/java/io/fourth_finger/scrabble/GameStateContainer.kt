@@ -1,16 +1,20 @@
 package io.fourth_finger.scrabble
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import io.fourth_finger.scrabble.models.GameState
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 
 class GameStateContainer {
 
-    private val _gameState = MutableLiveData<GameState>(GameState.getStartingGame())
-    val gameState = _gameState as LiveData<GameState>
+    private val _gameStateChanged = MutableSharedFlow<Unit>()
+    val gameStateChanged = _gameStateChanged as SharedFlow<Unit>
 
-    fun postNewGameState(gameState: GameState){
-        _gameState.postValue(gameState)
+    var gameState = GameState.getStartingGame()
+        private set
+
+    fun updateGameState(gameState: GameState){
+        this.gameState = gameState
+        _gameStateChanged.tryEmit(Unit)
     }
 
 }

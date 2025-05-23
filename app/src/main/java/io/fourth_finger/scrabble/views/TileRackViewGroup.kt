@@ -8,25 +8,26 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import io.fourth_finger.scrabble.models.TileRack
-import java.util.concurrent.atomic.AtomicBoolean
+import io.fourth_finger.scrabble.views.ViewUtil.Companion.removeFromParent
+import kotlinx.coroutines.runBlocking
 import kotlin.math.floor
+import kotlin.math.min
 import kotlin.properties.Delegates
 
 
 class TileRackViewGroup(
     context: Context,
-    tileRack: TileRack
+    tileRack: TileRack,
+    val dragMonitor: DragMonitor,
 ) : ViewGroup(context) {
 
     private val numberOfTiles = 7
     private var squareSize by Delegates.notNull<Int>()
 
-    private val isDraggingTile = AtomicBoolean(false)
 
     private val tileDragListener = object : OnDragListener {
 
-        private val dropped = AtomicBoolean(false)
-        private var indexOfDraggingChild = -1
+        private var indexOfDraggedChild = -1
 
         override fun onDrag(v: View, event: DragEvent): Boolean {
             val view = event.localState
@@ -34,9 +35,8 @@ class TileRackViewGroup(
                 when (event.action) {
                     DragEvent.ACTION_DRAG_STARTED -> {
                         Log.d("TileRack", "Drag started")
-                        if (!isDraggingTile.get()) {
-                            isDraggingTile.set(true)
-                            indexOfDraggingChild = indexOfChild(view)
+                        if (!dragMonitor.isDragInProgress()) {
+                            indexOfDraggedChild = indexOfChild(view)
                             return true
                         } else {
                             return false
@@ -45,46 +45,52 @@ class TileRackViewGroup(
 
                     DragEvent.ACTION_DROP -> {
                         Log.d("TileRack", "Drag drop")
-                        val parent = view.parent as ViewGroup
-                        parent.removeView(view)
+                        view.removeFromParent()
                         view.isVisible = true
                         view.translationX = 0f
                         view.translationY = 0f
                         view.scaleX = 1f
                         view.scaleY = 1f
-                        val index = floor(event.x / squareSize).toInt()
+                        val index = min(floor(event.x / squareSize).toInt(), childCount)
                         addView(view, index)
-                        dropped.set(true)
-                        requestLayout()
-                        return false
+                        Log.d("TileRack", "Drag drop clearing red")
+                        view.post {
+                            runBlocking {
+                                view.tile?.setHorizontalRed(false)
+                                view.tile?.setVerticalRed(false)
+                            }
+                        }
+                        Log.d("TileRack", "Drag drop finished")
+                        return true
                     }
 
                     DragEvent.ACTION_DRAG_ENDED -> {
                         Log.d("TileRack", "Drag end")
-                        isDraggingTile.set(false)
 
-                        if (dropped.get()) {
-                            dropped.set(false)
-                            return false
+                        val initialParent = dragMonitor.getInitialParent()
+                        if (
+                            initialParent is TileRackViewGroup &&
+                            (view.parent == null ||
+                                    view.parent is TileRackViewGroup) // Tile may have been rejected by the game board
+                        ) {
+                            Log.d("TileRack", "Drag end from rack to void or rack")
+
+                            // Puts back tiles that came from the tile rack and went into to the void
+                            view.isVisible = true
+                            view.translationX = 0f
+                            view.translationY = 0f
+                            view.scaleX = 1f
+                            view.scaleY = 1f
+                            if (view.parent == null) {
+                                addView(view, indexOfDraggedChild)
+                            }
+                            return true
                         }
-
-                        val parent = view.parent as ViewGroup
-                        if (parent is GameBoardViewGroup) {
-                            return false
-                        }
-
-                        parent.removeView(view)
-                        view.isVisible = true
-                        view.translationX = 0f
-                        view.translationY = 0f
-                        view.scaleX = 1f
-                        view.scaleY = 1f
-                        addView(view, indexOfDraggingChild)
-                        requestLayout()
-                        return true
+                        // requestLayout()
+                        // invalidate()
+                        Log.d("TileRack", "Drag end finished")
+                        return false
                     }
-
-                    else -> return false
                 }
             }
             return false
@@ -97,7 +103,7 @@ class TileRackViewGroup(
             if (view is TileView) {
                 when (event.action) {
                     MotionEvent.ACTION_DOWN -> {
-                        if (!isDraggingTile.get()) {
+                        if (!dragMonitor.isDragInProgress()) {
                             val dragShadowBuilder = DragShadowBuilder(view)
                             view.startDragAndDrop(null, dragShadowBuilder, view, 0)
                             view.visibility = INVISIBLE
@@ -121,8 +127,8 @@ class TileRackViewGroup(
     private fun addTileRack(tileRack: TileRack) {
         for (tile in tileRack.tiles) {
             val view = TileView(context, tile)
-            view.setOnTouchListener(touchListener)
             view.id = generateViewId()
+            view.setOnTouchListener(touchListener)
             addView(view)
         }
         setOnDragListener(tileDragListener)

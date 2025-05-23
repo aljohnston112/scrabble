@@ -3,7 +3,7 @@ package io.fourth_finger.scrabble.models
 enum class Direction{
     DOWN,
     RIGHT,
-    UNKNOWN
+    BOTH
 }
 
 class WordLocation(

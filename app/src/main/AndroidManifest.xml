@@ -13,14 +13,14 @@
         android:theme="@style/Theme.Scrabble"
         android:hardwareAccelerated="true"
         tools:targetApi="31">
+
+        <profileable android:shell="true"/>
         <activity
             android:name=".ActivityMain"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.Scrabble">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
